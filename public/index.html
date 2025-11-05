@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>⚙️ Hệ Thống Giám Sát Và Điều Khiển Biến Tần</title>
+  <script>
+      if (localStorage.getItem('auth') !== 'true') {
+    window.location.href = '/login.html';
+  }
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
@@ -11,9 +16,6 @@
 
 <body class="bg-gray-100 text-gray-800">
   <script>
-  if (localStorage.getItem('auth') !== 'true') {
-    window.location.href = '/login.html';
-  }
   <header class="bg-gray-800 text-white py-3 shadow-md sticky top-0 z-10">
   <div class="max-w-6xl mx-auto flex justify-between items-center px-6">
     <h1 class="text-2xl font-bold">⚙️ VFD IoT Dashboard</h1>

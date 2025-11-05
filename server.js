@@ -1,15 +1,10 @@
-// ===============================
-// 🌐 VFD IoT Web Server + Telegram Alert + Login
-// ===============================
+
 const express = require("express");
 const path = require("path");
 const TelegramBot = require("node-telegram-bot-api");
 const app = express();
-
-app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
-
-// 🔐 Cấu hình tài khoản đăng nhập
+app.use(express.static(path.join(__dirname, "public")));
 const USER = "thang";
 const PASS = "9204";
 
@@ -24,7 +19,14 @@ let vfdData = {
   freqActual: 0,
   status: "STOP"
 };
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
 
+// Trang giám sát chính
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 let targetFreq = 50;
 
 // ===============================
@@ -150,4 +152,8 @@ app.get("/api/data", (req, res) => res.json(vfdData));
 // 🚀 Khởi động server
 // ===============================
 const PORT = 3000;
+// Hiển thị trang đăng nhập
+app.get("/login", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "login.html"));
+});
 app.listen(PORT, () => console.log(`🌐 Server chạy tại http://localhost:${PORT}`));
