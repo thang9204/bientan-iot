@@ -151,9 +151,9 @@ app.get("/api/data", (req, res) => res.json(vfdData));
 // ===============================
 // 🚀 Khởi động server
 // ===============================
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 // Hiển thị trang đăng nhập
 app.get("/login", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "login.html"));
 });
-app.listen(PORT, () => console.log(`🌐 Server chạy tại http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`🌐 Server đang chạy trên cổng ${PORT}`));
