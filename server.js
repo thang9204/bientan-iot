@@ -6,6 +6,15 @@ const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+// ⚠️ Middleware chặn truy cập trực tiếp nếu chưa login
+app.use((req, res, next) => {
+  // Nếu chưa login mà truy cập trang chủ hoặc index.html thì chuyển về trang login
+  if (!req.session.loggedIn && (req.path === "/" || req.path === "/index.html")) {
+    return res.redirect("/login.html");
+  }
+  next();
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 
 // 🧠 Cấu hình đăng nhập
