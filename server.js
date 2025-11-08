@@ -18,6 +18,16 @@ app.use(session({
   saveUninitialized: false,
   cookie: { maxAge: 60 * 60 * 1000 } // hết hạn sau 1h
 }));
+app.use((req, res, next) => {
+  // Nếu chưa login mà truy cập trang chủ => chuyển tới /login.html
+  if (!req.session.loggedIn && (req.path === "/" || req.path === "/index.html")) {
+    return res.redirect("/login.html");
+  }
+  next();
+});
+
+app.use(express.static(path.join(__dirname, "public")));
+
 
 // 🧱 Middleware kiểm tra login
 function requireLogin(req, res, next) {
