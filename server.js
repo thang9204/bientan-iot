@@ -6,36 +6,28 @@ const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// ⚠️ Middleware chặn truy cập trực tiếp nếu chưa login
+// 🧠 Cấu hình đăng nhập
+const USER = "thang";
+const PASS = "9204";
+app.use(session({
+  secret: "vfd_session_secret",
+  resave: false,
+  saveUninitialized: false,
+  cookie: { maxAge: 60 * 60 * 1000 }
+}));
+
+// ⚠️ Kiểm tra đăng nhập TRƯỚC khi phục vụ static file
 app.use((req, res, next) => {
-  // Nếu chưa login mà truy cập trang chủ hoặc index.html thì chuyển về trang login
   if (!req.session.loggedIn && (req.path === "/" || req.path === "/index.html")) {
     return res.redirect("/login.html");
   }
   next();
 });
-
 app.use(express.static(path.join(__dirname, "public")));
 
 // 🧠 Cấu hình đăng nhập
 const USER = "thang";
 const PASS = "9204";
-
-app.use(session({
-  secret: "vfd_session_secret",
-  resave: false,
-  saveUninitialized: false,
-  cookie: { maxAge: 60 * 60 * 1000 } // hết hạn sau 1h
-}));
-app.use((req, res, next) => {
-  // Nếu chưa login mà truy cập trang chủ => chuyển tới /login.html
-  if (!req.session.loggedIn && (req.path === "/" || req.path === "/index.html")) {
-    return res.redirect("/login.html");
-  }
-  next();
-});
-
-app.use(express.static(path.join(__dirname, "public")));
 
 
 // 🧱 Middleware kiểm tra login
