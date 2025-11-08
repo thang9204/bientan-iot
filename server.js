@@ -1,14 +1,33 @@
-
 const express = require("express");
 const path = require("path");
+const session = require("express-session");
 const TelegramBot = require("node-telegram-bot-api");
 const app = express();
+
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
+
+// 🧠 Cấu hình đăng nhập
 const USER = "thang";
 const PASS = "9204";
 
+app.use(session({
+  secret: "vfd_session_secret",
+  resave: false,
+  saveUninitialized: false,
+  cookie: { maxAge: 60 * 60 * 1000 } // hết hạn sau 1h
+}));
+
+// 🧱 Middleware kiểm tra login
+function requireLogin(req, res, next) {
+  if (!req.session.loggedIn) return res.redirect("/login.html");
+  next();
+}
+
+// ==================================================
 // 🧠 Dữ liệu biến tần
+// ==================================================
 let vfdData = {
   voltage: 0,
   current: 0,
@@ -19,54 +38,69 @@ let vfdData = {
   freqActual: 0,
   status: "STOP"
 };
-app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
 
-// Trang giám sát chính
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
 let targetFreq = 50;
 
-// ===============================
+// ==================================================
 // 📲 Cấu hình Telegram Bot
-// ===============================
-// 👉 Thay TOKEN và CHAT_ID bằng của bạn
-const TELEGRAM_TOKEN = "8031072140:AAFgdm-7zt1dKraIm6cddUn3JNf9XG7DPSo"; // <-- token thật của bạn
-const CHAT_ID = "8359780065"; // <-- chat id thật của bạn
+// ==================================================
+const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
+const CHAT_ID = process.env.CHAT_ID;
 const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: false });
 
 function sendAlert(message) {
-  bot.sendMessage(CHAT_ID, `🚨 [VFD IoT] ${message}`);
+  if (bot && CHAT_ID)
+    bot.sendMessage(CHAT_ID, `🚨 [VFD IoT] ${message}`);
   console.log("📤 Telegram:", message);
 }
 
-// ===============================
+// ==================================================
 // ⚙️ Ngưỡng cảnh báo
-// ===============================
+// ==================================================
 const WARNING_CURRENT = 5.0;
 const WARNING_VOLTAGE_LOW = 180;
 const WARNING_VOLTAGE_HIGH = 250;
 
-// ===============================
-// 🔐 API đăng nhập
-// ===============================
+// ==================================================
+// 🔐 Xử lý đăng nhập
+// ==================================================
+app.get("/login", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "login.html"));
+});
+
 app.post("/api/login", (req, res) => {
   const { username, password } = req.body;
   if (username === USER && password === PASS) {
+    req.session.loggedIn = true;
     console.log(`✅ ${username} đăng nhập thành công`);
-    res.sendStatus(200);
+    return res.redirect("/index.html");
   } else {
     console.log(`❌ Đăng nhập thất bại từ: ${username}`);
-    res.sendStatus(401);
+    return res.send(
+      '<script>alert("Sai tài khoản hoặc mật khẩu!"); window.location="/login.html";</script>'
+    );
   }
 });
 
-// ===============================
+// Đăng xuất
+app.get("/logout", (req, res) => {
+  req.session.destroy(() => {
+    res.clearCookie("connect.sid");
+    res.redirect("/login.html");
+  });
+});
+
+// ==================================================
+// 🏠 Trang giám sát chính (yêu cầu login)
+// ==================================================
+app.get("/", requireLogin, (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// ==================================================
 // 🌍 API điều khiển từ web
-// ===============================
-app.post('/api/setFreq', (req, res) => {
+// ==================================================
+app.post('/api/setFreq', requireLogin, (req, res) => {
   const { freq } = req.body;
   if (typeof freq === 'number' && !isNaN(freq)) {
     vfdData.freqSet = freq;
@@ -78,40 +112,35 @@ app.post('/api/setFreq', (req, res) => {
   }
 });
 
-
-app.post("/api/run", (req, res) => {
+app.post("/api/run", requireLogin, (req, res) => {
   vfdData.status = "RUN";
   console.log("🟢 RUN từ web!");
   if (bot) bot.sendMessage(CHAT_ID, "🟢 Biến tần RUN!");
   res.sendStatus(200);
 });
 
-// =======================
-// ⏹️ NÚT STOP
-// =======================
-app.post("/api/stop", (req, res) => {
+app.post("/api/stop", requireLogin, (req, res) => {
   vfdData.status = "STOP";
-  vfdData.freqSet = 0; // dừng biến tần
+  vfdData.freqSet = 0;
   console.log("🔴 STOP từ web!");
   if (bot) bot.sendMessage(CHAT_ID, "🔴 Biến tần STOP!");
   res.sendStatus(200);
 });
 
-// ===============================
+// ==================================================
 // 📡 ESP32 lấy tần số và trạng thái
-// ===============================
-app.get('/api/freq', (req, res) => {
+// ==================================================
+app.get("/api/freq", (req, res) => {
   res.json({ freq: vfdData.freqSet, status: vfdData.status });
 });
 
-// ===============================
+// ==================================================
 // 🛰️ ESP32 gửi dữ liệu đo
-// ===============================
+// ==================================================
 app.post("/api/update", (req, res) => {
   const data = req.body;
   console.log("📩 Nhận dữ liệu từ ESP32:", data);
 
-  // 🔧 Cập nhật từng trường, KHÔNG ghi đè toàn bộ object
   vfdData.voltage = data.voltage;
   vfdData.current = data.current;
   vfdData.power = data.power;
@@ -119,19 +148,14 @@ app.post("/api/update", (req, res) => {
   vfdData.freq = data.freq;
   vfdData.freqSet = data.freqSet;
   vfdData.freqActual = data.freqActual;
+  if (data.temperature !== undefined) vfdData.temperature = data.temperature;
 
-  // 🧊 Nhiệt độ nếu có
-  if (data.temperature !== undefined)
-    vfdData.temperature = data.temperature;
-
-  // ⚙️ Giữ trạng thái STOP nếu đang dừng
   if (vfdData.status === "STOP" && data.status === "RUN") {
     console.log("⛔ Bỏ qua trạng thái RUN vì đang ở STOP");
   } else {
     vfdData.status = data.status;
   }
 
-  // ⚠️ Kiểm tra ngưỡng cảnh báo
   if (vfdData.current > WARNING_CURRENT)
     sendAlert(`⚠️ Dòng điện cao: ${vfdData.current.toFixed(2)}A`);
   if (vfdData.voltage < WARNING_VOLTAGE_LOW)
@@ -142,18 +166,13 @@ app.post("/api/update", (req, res) => {
   res.json({ ok: true });
 });
 
-
-// ===============================
+// ==================================================
 // 🔎 Web lấy dữ liệu để hiển thị
-// ===============================
-app.get("/api/data", (req, res) => res.json(vfdData));
+// ==================================================
+app.get("/api/data", requireLogin, (req, res) => res.json(vfdData));
 
-// ===============================
+// ==================================================
 // 🚀 Khởi động server
-// ===============================
+// ==================================================
 const PORT = process.env.PORT || 3000;
-// Hiển thị trang đăng nhập
-app.get("/login", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "login.html"));
-});
 app.listen(PORT, () => console.log(`🌐 Server đang chạy trên cổng ${PORT}`));
