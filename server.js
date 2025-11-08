@@ -24,12 +24,6 @@ app.use((req, res, next) => {
   next();
 });
 app.use(express.static(path.join(__dirname, "public")));
-
-// 🧠 Cấu hình đăng nhập
-const USER = "thang";
-const PASS = "9204";
-
-
 // 🧱 Middleware kiểm tra login
 function requireLogin(req, res, next) {
   if (!req.session.loggedIn) return res.redirect("/login.html");
