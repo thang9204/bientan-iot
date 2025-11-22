@@ -34,28 +34,46 @@
   </div>
 
   <script>
-  try {
-  const res = await fetch('/api/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password })
-  });
+async function login() {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value.trim();
+  const msg = document.getElementById('msg');
 
-  const result = await res.json();
-
-  if (res.status === 200 && result.ok) {
-    // Lưu trạng thái đăng nhập
-    localStorage.setItem('auth', 'true');
-    localStorage.setItem('username', username);
-    window.location.href = '/';
-  } else {
-    msg.innerText = result.message || "Sai thông tin đăng nhập!";
+  // 🟡 Trường hợp bỏ trống
+  if (!username || !password) {
+    msg.innerText = "⚠️ Vui lòng nhập thông tin!";
     msg.classList.remove("hidden");
+    msg.classList.add("text-yellow-500");
+    return;
   }
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
 
-} catch (err) {
-  msg.innerText = "🚫 Lỗi kết nối server!";
-  msg.classList.remove("hidden");
+    const result = await res.json();
+
+    // 🟢 Đăng nhập thành công
+    if (res.status === 200 && result.ok) {
+      localStorage.setItem('auth', 'true');
+      localStorage.setItem('username', username);
+      window.location.href = "/";
+    } 
+    // 🔴 Sai thông tin đăng nhập
+    else {
+      msg.innerText = "❌ Sai thông tin đăng nhập!";
+      msg.classList.remove("hidden");
+      msg.classList.remove("text-yellow-500");
+      msg.classList.add("text-red-500");
+    }
+
+  } catch (err) {
+    msg.innerText = "🚫 Lỗi kết nối server!";
+    msg.classList.remove("hidden");
+    msg.classList.add("text-red-500");
+  }
 }
   </script>
 </body>
