@@ -8,6 +8,16 @@ let vfdData = {
   voltage: 0, current: 0, power: 0, freq: 0,
   energy: 0, freqSet: 50, freqActual: 0, status: "STOP"
 };
+app.use((req, res, next) => {
+  if (!req.session.loggedIn && (req.path === "/" || req.path === "/index.html")) {
+    return res.redirect("/login.html");
+  }
+  next();
+});
+return res.status(401).json({
+  ok: false,
+  message: "❌ Sai thông tin đăng nhập!"
+});
 
 // ESP32 gửi dữ liệu lên
 app.post('/api/update', (req, res) => {

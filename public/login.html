@@ -34,61 +34,29 @@
   </div>
 
   <script>
-  function login() {
-    const user = document.getElementById("username").value;
-    const pass = document.getElementById("password").value;
+  try {
+  const res = await fetch('/api/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password })
+  });
 
-    if (user === "admin" && pass === "1234") {
-      localStorage.setItem("auth", "true");
-      window.location.href = "/";
-    } else {
-      alert("Sai tài khoản hoặc mật khẩu!");
-    }
+  const result = await res.json();
+
+  if (res.status === 200 && result.ok) {
+    // Lưu trạng thái đăng nhập
+    localStorage.setItem('auth', 'true');
+    localStorage.setItem('username', username);
+    window.location.href = '/';
+  } else {
+    msg.innerText = result.message || "Sai thông tin đăng nhập!";
+    msg.classList.remove("hidden");
   }
-    // Nhấn Enter cũng kích hoạt đăng nhập
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") login();
-    });
 
-    async function login() {
-      const username = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value.trim();
-      const msg = document.getElementById('msg');
-
-      // Kiểm tra trống
-      if (!username || !password) {
-        msg.innerText = "⚠️ Vui lòng nhập đầy đủ tài khoản và mật khẩu!";
-        msg.classList.remove("hidden");
-        msg.classList.add("animate-pulse");
-        setTimeout(() => msg.classList.add("hidden"), 3000);
-        return;
-      }
-
-      // Gửi yêu cầu login tới server
-      try {
-        const res = await fetch('/api/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password })
-        });
-
-        if (res.status === 200) {
-          // Lưu trạng thái đăng nhập
-          localStorage.setItem('auth', 'true');
-          localStorage.setItem('username', username);
-          window.location.href = '/';
-        } else {
-          msg.innerText = "❌ Sai tài khoản hoặc mật khẩu!";
-          msg.classList.remove("hidden");
-          msg.classList.add("animate-pulse");
-          setTimeout(() => msg.classList.add("hidden"), 4000);
-        }
-      } catch (err) {
-        msg.innerText = "🚫 Lỗi kết nối tới máy chủ!";
-        msg.classList.remove("hidden");
-        setTimeout(() => msg.classList.add("hidden"), 4000);
-      }
-    }
+} catch (err) {
+  msg.innerText = "🚫 Lỗi kết nối server!";
+  msg.classList.remove("hidden");
+}
   </script>
 </body>
 </html>
