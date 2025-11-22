@@ -19,11 +19,37 @@ app.use(
   })
 );
 
-// Tài khoản đăng nhập
-const USER = "thang";
-const PASS = "9204";
+// ❗ Static files đặt trước, để login.html load bình thường
+app.use(express.static(path.join(__dirname, "public")));
 
-// Dữ liệu biến tần
+// Middleware yêu cầu đăng nhập
+function requireLogin(req, res, next) {
+  if (!req.session.loggedIn) return res.redirect("/login.html");
+  next();
+}
+
+// API login
+app.post("/api/login", (req, res) => {
+  const { username, password } = req.body;
+
+  if (username === "thang" && password === "9204") {
+    req.session.loggedIn = true;
+    return res.status(200).json({ ok: true });
+  }
+
+  return res.status(401).json({
+    ok: false,
+    message: "❌ Sai thông tin đăng nhập!"
+  });
+});
+
+// Chặn truy cập vào index.html
+app.get("/", requireLogin, (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// ====== API VFD ======
+
 let vfdData = {
   voltage: 0,
   current: 0,
@@ -35,85 +61,39 @@ let vfdData = {
   status: "STOP",
 };
 
-// Middleware chặn truy cập trái phép
-function requireLogin(req, res, next) {
-  if (!req.session.loggedIn) {
-    return res.redirect("/login.html");
-  }
-  next();
-}
-
-// API login
-app.post("/api/login", (req, res) => {
-  const { username, password } = req.body;
-
-  if (username === USER && password === PASS) {
-    req.session.loggedIn = true;
-    return res.status(200).json({ ok: true });
-  }
-
-  return res.status(401).json({
-    ok: false,
-    message: "❌ Sai thông tin đăng nhập!"
-  });
-});
-
-// Kiểm tra session hợp lệ
-app.get("/api/checkLogin", (req, res) => {
-  res.json({ loggedIn: req.session.loggedIn === true });
-});
-
-// Chặn truy cập / và /index.html nếu chưa đăng nhập
-app.use((req, res, next) => {
-  if (!req.session.loggedIn && (req.path === "/" || req.path === "/index.html")) {
-    return res.redirect("/login.html");
-  }
-  next();
-});
-
-// Static files
-app.use(express.static(path.join(__dirname, "public")));
-
-// ESP gửi dữ liệu
 app.post("/api/update", (req, res) => {
   vfdData = { ...vfdData, ...req.body };
   res.sendStatus(200);
 });
 
-// Web lấy dữ liệu
-app.get("/api/data", (req, res) => {
-  res.json(vfdData);
-});
+app.get("/api/data", requireLogin, (req, res) => res.json(vfdData));
 
-// Web đặt tần số
 app.post("/api/setFreq", requireLogin, (req, res) => {
   vfdData.freqSet = req.body.freq;
   res.sendStatus(200);
 });
 
-// RUN thuận
 app.post("/api/runFwd", requireLogin, (req, res) => {
   vfdData.status = "RUN_FWD";
   res.sendStatus(200);
 });
 
-// RUN nghịch
 app.post("/api/runRev", requireLogin, (req, res) => {
   vfdData.status = "RUN_REV";
   res.sendStatus(200);
 });
 
-// STOP
 app.post("/api/stop", requireLogin, (req, res) => {
   vfdData.status = "STOP";
   res.sendStatus(200);
 });
 
-// ESP đọc tần số
-app.get("/api/freq", (req, res) => {
+app.get("/api/freq", requireLogin, (req, res) => {
   res.json({ freq: vfdData.freqSet, status: vfdData.status });
 });
 
-// RUN SERVER
+// Chạy server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🌐 Server chạy tại PORT ${PORT}`));
+app.listen(PORT, () =>
+  console.log(`🌐 Server chạy tại PORT ${PORT}`)
+);
