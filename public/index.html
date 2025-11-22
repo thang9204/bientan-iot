@@ -4,11 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>⚙️ Hệ Thống Giám Sát Và Điều Khiển Biến Tần</title>
-  <script>
-      if (localStorage.getItem('auth') !== 'true') {
-    window.location.href = '/login.html';
-  }
-  </script>
+<script>
+  // Đợi server xử lý trước khi kiểm tra localStorage
+  document.addEventListener("DOMContentLoaded", () => {
+    if (localStorage.getItem('auth') !== 'true') {
+      window.location.href = 'login.html'; // chỉ redirect khi chắc chắn có file login.html
+    }
+  });
+</script>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
