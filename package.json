@@ -10,8 +10,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "connect-redis": "^9.0.0",
     "express": "^5.1.0",
     "express-session": "^1.18.2",
+    "ioredis": "^5.8.2",
     "node-telegram-bot-api": "^0.66.0"
   }
 }

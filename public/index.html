@@ -108,11 +108,15 @@
       </div>
 
       <div class="flex justify-center gap-4">
-        <button id="runBtn"
-          class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg shadow">🟢 RUN</button>
-        <button id="stopBtn"
-          class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg shadow">🔴 STOP</button>
-      </div>
+  <button id="runFwdBtn"
+    class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg shadow">🟢 RUN THUẬN</button>
+
+  <button id="runRevBtn"
+    class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg shadow">🟠 RUN NGHỊCH</button>
+
+  <button id="stopBtn"
+    class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg shadow">🔴 STOP</button>
+</div>
       <div class="bg-gray-50 p-4 rounded-xl shadow-inner inline-block mt-4">
     <h2 class="text-gray-600 mb-2">Trạng thái</h2>
     <div class="flex items-center justify-center gap-3">
@@ -188,10 +192,15 @@
       // LED trạng thái
       const led = document.getElementById('led');
       led.className = "w-6 h-6 rounded-full shadow-inner transition-all duration-300";
-      if (data.status === "RUN") led.classList.add("bg-green-500", "animate-pulse");
-      else if (data.status === "STOP") led.classList.add("bg-red-500");
-      else led.classList.add("bg-gray-400");
-
+      led.className = "w-6 h-6 rounded-full shadow-inner transition-all duration-300";
+if (data.status === "RUN_FWD")
+  led.classList.add("bg-green-500", "animate-pulse");
+else if (data.status === "RUN_REV")
+  led.classList.add("bg-yellow-500", "animate-pulse");
+else if (data.status === "STOP")
+  led.classList.add("bg-red-500");
+else
+  led.classList.add("bg-gray-400");
       // Gauge meter cập nhật
       gaugeChart.updateSeries([data.freq.toFixed(1)]);
 
@@ -225,11 +234,13 @@
         body: JSON.stringify({ freq: value })
       });
     });
+document.getElementById('runFwdBtn').addEventListener('click', async () => {
+  await fetch('/api/runFwd', { method: 'POST' });
+});
 
-    document.getElementById('runBtn').addEventListener('click', async () => {
-      await fetch('/api/run', { method: 'POST' });
-    });
-
+document.getElementById('runRevBtn').addEventListener('click', async () => {
+  await fetch('/api/runRev', { method: 'POST' });
+});
     document.getElementById('stopBtn').addEventListener('click', async () => {
       await fetch('/api/stop', { method: 'POST' });
     });

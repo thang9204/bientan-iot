@@ -25,10 +25,15 @@ app.post('/api/setFreq', (req, res) => {
   vfdData.freqSet = req.body.freq;
   res.sendStatus(200);
 });
+app.post("/api/runFwd", requireLogin, (req, res) => {
+  vfdData.status = "RUN_FWD";
+  console.log("🟢 RUN THUẬN!");
+  res.sendStatus(200);
+});
 
-// Web nhấn RUN
-app.post('/api/run', (req, res) => {
-  vfdData.status = "RUN";
+app.post("/api/runRev", requireLogin, (req, res) => {
+  vfdData.status = "RUN_REV";
+  console.log("🟠 RUN NGHỊCH!");
   res.sendStatus(200);
 });
 
